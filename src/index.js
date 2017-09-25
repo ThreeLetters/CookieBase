@@ -1,1 +1,11 @@
+"use strict";
 
+
+class CookieBase {
+  
+  
+  
+  
+  
+  
+}
