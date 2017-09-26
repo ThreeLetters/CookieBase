@@ -472,7 +472,7 @@ class CookieBase {
         if (rowNum !== dt.data.length - 1) {
             var str2 = str + rowNum + '_cc_';
             for (var i in dt.struct) {
-                document.cookie = str2 + i + '=' + last[i] + this.append;
+                document.cookie = str2 + i + '=' + encodeURIComponent(last[i]) + this.append;
             }
         }
         var str2 = str + (dt.data.length - 1) + '_cc_';
@@ -520,7 +520,7 @@ class CookieBase {
         for (var i in dt.struct) {
             if (!rep[i]) continue;
             var res = this.cast(rep[i], dt.struct[i])
-            document.cookie = str + i + '=' + res;
+            document.cookie = str + i + '=' + encodeURIComponent(res);
             row[i] = res;
         }
         dt.tree.delete(row);
