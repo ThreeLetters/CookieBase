@@ -22,42 +22,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-var version = "0.1.0";
-var today = new Date();
-var dd = today.getDate();
-var mm = today.getMonth() + 1; //January is 0!
 
-var yyyy = today.getFullYear();
-if (dd < 10) {
-    dd = '0' + dd;
+// BUILD BETWEEN
+function every(obj, call) {
+    for (var i in obj) {
+        if (!call(obj[i], i)) return false;
+    }
+    return true;
 }
-if (mm < 10) {
-    mm = '0' + mm;
-}
-var date = dd + '/' + mm + '/' + yyyy;
-
-
-var fs = require('fs');
-
-
-var index = fs.readFileSync(__dirname + '/src/index.js', 'utf8').split('// BUILD BETWEEN')[1];
-var util = fs.readFileSync(__dirname + '/src/Util.js', 'utf8').split('// BUILD BETWEEN')[1];
-var rson = fs.readFileSync(__dirname + '/src/lib/RSON.js', 'utf8').split('// BUILD BETWEEN')[1];
-var KDTree = fs.readFileSync(__dirname + '/src/lib/KDTree.js', 'utf8').split('// BUILD BETWEEN')[1];
-
-
-var final = `"use strict";\n\
-/*\n\
- Author: Andrews54757\n\
- License: MIT (https://github.com/ThreeLetters/CookieBase/blob/master/LICENSE)\n\
- Source: https://github.com/ThreeLetters/CookieBase\n\
- Build: v${version}\n\
- Built on: ${date}\n\
-*/\n\
-${util}\
-${rson}\
-${KDTree}\
-${index}`;
-
-
-fs.writeFileSync(__dirname + '/build/CookieBase.js', final);
+// BUILD BETWEEN
