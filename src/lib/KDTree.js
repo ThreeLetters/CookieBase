@@ -152,7 +152,10 @@ class KDTree {
         var recurse = function (node) {
             if (node.left) {
                 var val = obj[this.dims[node.dim]];
-                if (typeof val !== 'object') {
+                if (val === undefined) {
+                    recurse(node.left);
+                    recurse(node.right);
+                } else if (typeof val !== 'object') {
                     recurse(val > node.split ? node.right : node.left)
                 } else {
                     var min = val[0];

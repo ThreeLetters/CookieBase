@@ -72,7 +72,7 @@ class CookieBase {
                 var column = a[2];
 
                 if (!this.data[table].data[row]) this.data[table].data[row] = {};
-                this.data[table].data[row][column] = decodeURIComponent(s[1]);
+                this.data[table].data[row][column] = this.decast2(decodeURIComponent(s[1]), this.data[table].struct[column]);
             }
         })
     }
@@ -131,12 +131,15 @@ class CookieBase {
                 break;
         }
     }
+    decast2(val, type) {
+        if (type === 'str' || type === 'rson' || type === 'json') return val;
+        else if (type === 'int') return parseInt(val);
+        else if (type === 'float') return parseFloat(val);
+    }
 
     apply(dt, cond) {
         for (var i in dt.struct) {
-            if (!cond[i]) cond[i] = [-Infinity, Infinity];
-            else {
-
+            if (cond[i]) {
                 if (dt.struct[i] === 'json' || dt.struct[i] === 'rson') {
                     cond[i] = this.cast(cond[i], dt.struct[i])
                 } else if (cond[i][0] && cond.length === 2) {
@@ -233,7 +236,7 @@ class CookieBase {
     update(table, data, where, func) {
         if (where) {
             this.apply(this.data[table], where);
-            var arr = this.data[table].tree.get(where);
+            var arr = this.data[table].tree.get();
             arr.forEach((obj) => {
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
