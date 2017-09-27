@@ -286,7 +286,7 @@ class CookieBase {
             dt.tree = new KDTree(dt.columnLen);
             dt.data.forEach((row) => {
                 row._TreeNode = null;
-                this._update(table, row, data);
+                this.updateRow(table, row, data);
             });
         }
     }
