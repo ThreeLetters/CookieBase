@@ -27,7 +27,7 @@ class CookieBase {
     constructor(tables, options) {
         this.tables = tables;
         this.data = {};
-        this.initTables()
+        this.initTables();
         this.parse();
         this.finish();
         this.options = options || {};
@@ -48,10 +48,24 @@ class CookieBase {
 
     initTables() {
         for (var i in this.tables) {
+            var input = this.tables[i];
+            var struct = [];
+            var b = Object.keys(input);
+            var indexes = {};
+            var o = 0;
+            b.sort();
+
+            b.forEach((d) => {
+                struct.push(input[d]);
+                indexes[d] = o++;
+            });
             this.data[i] = {
                 name: i,
-                struct: this.tables[i],
+                struct: struct,
+                indexes: indexes,
+                sindexes: b,
                 data: [],
+                columnLen: b.length,
                 deleted: 0
             }
         }
@@ -68,10 +82,18 @@ class CookieBase {
                 var a = s[0].substr(11).split('_cc_');
 
                 var table = a[0];
-                var row = a[1];
-                var column = a[2];
+                var dt = this.data[table];
 
-                if (!this.data[table].data[row]) this.data[table].data[row] = {};
+                var index = parseInt(a[1]);
+
+                var row = Math.floor(index / dt.columnLen);
+                var column = index % dt.columnLen;
+
+
+                if (!this.data[table].data[row]) {
+                    this.data[table].data[row] = [];
+                    this.data[table].data[row].index = row;
+                }
                 this.data[table].data[row][column] = this.decast2(decodeURIComponent(s[1]), this.data[table].struct[column]);
             }
         })
@@ -81,15 +103,14 @@ class CookieBase {
 
         for (var i in this.data) {
             var table = this.data[i];
-            var Tree = new KDTree(Object.keys(table.struct));
+            var Tree = new KDTree(table.columnLen);
 
             table.tree = Tree;
 
-            for (var j in table.data) {
-                Tree.insert(table.data[j]);
-            }
+            table.data.forEach((row) => {
+                Tree.insert(row);
+            });
         }
-
     }
 
     cast(val, type) {
@@ -140,27 +161,29 @@ class CookieBase {
     apply(dt, cond) {
         for (var i in dt.struct) {
             if (cond[i]) {
-                if (dt.struct[i] === 'json' || dt.struct[i] === 'rson') {
-                    cond[i] = this.cast(cond[i], dt.struct[i])
+                var type = dt.struct[dt.indexes[i]]
+                if (type === 'json' || type === 'rson') {
+                    cond[i] = this.cast(cond[i], type)
                 } else if (cond[i][0] && cond.length === 2) {
-                    cond[i][0] = this.cast(cond[i][0], dt.struct[i])
-                    cond[i][1] = this.cast(cond[i][1], dt.struct[i])
+                    cond[i][0] = this.cast(cond[i][0], type)
+                    cond[i][1] = this.cast(cond[i][1], type)
                 } else {
-                    cond[i] = this.cast(cond[i], dt.struct[i])
+                    cond[i] = this.cast(cond[i], type)
                 }
             }
         }
     }
     _insert(table, data) {
         var dt = this.data[table];
-        var rowNum = dt.data.length;
+        var start = dt.data.length * dt.columnLen;
         var r = [];
-        var str = 'cookiebase_' + table + '_cc_' + rowNum + '_cc_';
+        r.index = start;
+        var str = 'cookiebase_' + table + '_cc_';
         dt.data.push(r)
-        for (var i in dt.struct) {
-            r[i] = this.cast(data[i], dt.struct[i]);
-            document.cookie = str + i + '=' + encodeURIComponent(r[i]) + ';' + this.append;
-        }
+        dt.struct.forEach((type, i) => {
+            r[i] = this.cast(data[dt.sindexes[i]], type);
+            document.cookie = str + (start + i) + '=' + encodeURIComponent(r[i]) + ';' + this.append;
+        })
         dt.tree.insert(r);
     }
 
@@ -171,111 +194,116 @@ class CookieBase {
         else this._insert(table, data);
     }
 
-    _delete(table, row) {
+    deleteRow(table, row) {
         var dt = this.data[table];
-        var last = dt.data[dt.data.length - 1];
-        var rowNum = dt.data.indexOf(row);
+        var lastIndex = dt.data.length - 1
+        var last = dt.data[lastIndex];
+        var rowNum = row.index;
         var str = 'cookiebase_' + table + '_cc_';
-        if (rowNum !== dt.data.length - 1) {
-            var str2 = str + rowNum + '_cc_';
-            for (var i in dt.struct) {
-                document.cookie = str2 + i + '=' + encodeURIComponent(last[i]) + this.append;
-            }
+        if (rowNum !== lastIndex) {
+            var start = rowNum * dt.columnLen;
+            dt.struct.forEach((type, i) => {
+                document.cookie = str + (start + i) + '=' + encodeURIComponent(last[i]) + this.append;
+            });
+            last.index = lastIndex;
         }
-        var str2 = str + (dt.data.length - 1) + '_cc_';
-        for (var i in dt.struct) {
-            document.cookie = str2 + i + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;' + this.append2;
-        }
-
+        var str2 = str + lastIndex + '_cc_';
+        dt.struct.forEach((type, i) => {
+            document.cookie = str + (start + i) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;' + this.append2;
+        });
         dt.data[rowNum] = last;
         dt.data.pop();
         dt.tree.delete(row);
     }
     delete(table, where, func) {
+        var dt = this.data[table];
         if (where) {
-            this.apply(this.data[table], where);
-            var arr = this.data[table].tree.get(where);
+            this.apply(dt, where);
+            var arr = dt.tree.get(where);
             arr.forEach((row) => {
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
-                            return row[key] > val[0] && row[key] <= val[1];
+                            return row[dt.indexes[key]] > val[0] && row[dt.indexes[key]] <= val[1];
                         } else {
-                            return row[key] === val;
+                            return row[dt.indexes[key]] === val;
                         }
                     })) {
-                    if (!func || func(row)) this._delete(table, row);
+                    if (!func || func(row)) this.deleteRow(table, row);
                 }
             });
         } else {
-            this.data[table].tree = new KDTree(Object.keys(this.data[table].struct));
+            dt.tree = new KDTree(dt.columnLen);
             var str = 'cookiebase_' + table + '_cc_';
-            this.data[table].deleted = 0;
-            this.data[table].data.forEach((d, i) => {
-                var g = str + i + '_cc_';
+            dt.data.forEach((d, i) => {
+                var g = i * dt.columnLen;
                 d._TreeNode = null;
-                for (var i in this.data[table].struct) {
-                    document.cookie = g + i + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;' + this.append2;
-                }
+                dt.struct.forEach((type, i) => {
+                    document.cookie = str + (g + i) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;' + this.append2;
+                })
             });
-            this.data[table].data = [];
+            dt.data = [];
         }
     }
-    _update(table, row, rep) {
+    updateRow(table, row, rep) {
         var dt = this.data[table];
-        var rowNum = dt.data.indexOf(row);
-        var str = 'cookiebase_' + table + '_cc_' + rowNum + '_cc_';
-        for (var i in dt.struct) {
-            if (!rep[i]) continue;
-            var res = this.cast(rep[i], dt.struct[i])
-            document.cookie = str + i + '=' + encodeURIComponent(res);
+        var rowNum = dt.data.index;
+        var str = 'cookiebase_' + table + '_cc_';
+        var start = rowNum * dt.columnLen;
+        dt.struct.forEach((type, i) => {
+            if (!rep[dt.indexes[i]]) continue;
+            var res = this.cast(rep[dt.indexes[i]], type)
+            document.cookie = str + (start + i) + '=' + encodeURIComponent(res);
             row[i] = res;
-        }
+        })
         dt.tree.delete(row);
         dt.tree.insert(row);
     }
     update(table, data, where, func) {
+        var dt = this.data[table]
         if (where) {
-            this.apply(this.data[table], where);
-            var arr = this.data[table].tree.get();
-            arr.forEach((obj) => {
+            this.apply(dt, where);
+            var arr = dt.tree.get();
+            arr.forEach((row) => {
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
-                            return obj[key] > val[0] && obj[key] <= val[1];
+                            return row[dt.indexes[key]] > val[0] && row[dt.indexes[key]] <= val[1];
                         } else {
-                            return obj[key] === val;
+                            return row[dt.indexes[key]] === val;
                         }
                     })) {
                     if (func) {
-                        var r = func(obj);
+                        var r = func(row);
                         if (r === true) {
-                            this._update(table, obj, data);
+                            this.updateRow(table, row, data);
                         } else
                         if (r !== undefined) {
-                            this._update(table, obj, r);
+                            this.updateRow(table, row, r);
                         }
-                    } else this._update(table, obj, data);
+                    } else this.updateRow(table, row, data);
                 }
             });
         } else {
-            this.data[table].tree = new KDTree(Object.keys(this.data[table].struct));
-            this.data[table].data.forEach((s) => {
-                this._update(table, s, data);
+            dt.tree = new KDTree(dt.columnLen);
+            dt.data.forEach((row) => {
+                row._TreeNode = null;
+                this._update(table, row, data);
             });
         }
     }
     select(table, where, func) {
+        var dt = this.data[table];
         if (where) {
-            this.apply(this.data[table], where);
+            this.apply(dt, where);
             var out = [];
-            this.data[table].tree.query(where, (obj) => {
+            dt.tree.query(where, (row) => {
                 var copy = {};
                 if (every(where, (val, key) => {
-                        if (typeof val === 'object' && obj[key] <= val[0] && obj[key] > val[1]) {
+                        if (typeof val === 'object' && row[dt.indexes[key]] <= val[0] && row[dt.indexes[key]] > val[1]) {
                             return false;
-                        } else if (obj[key] !== val) {
+                        } else if (row[dt.indexes[key]] !== val) {
                             return false;
                         }
-                        copy[key] = this.decast(obj[key], this.data[table].struct[i]);
+                        copy[key] = this.decast(row[dt.indexes[key]], dt.struct[i]);
                         return true;
                     })) {
                     if (!func || func(copy)) out.push(copy);
@@ -283,19 +311,14 @@ class CookieBase {
             })
             return out;
         } else {
-            return this.data[table].data.map((row) => {
-                var obj = {};
-                for (var i in this.data[table].struct) {
-                    if (i !== '_TreeNode') {
-                        obj[i] = this.decast(row[i], this.data[table].struct[i]);
-                    }
-                }
-                return obj;
+            return dt.data.map((row) => {
+                var copy = {};
+                dt.struct.forEach((type, i) => {
+                    copy[dt.sindexes[i]] = this.decast(row[i], dt.struct[i]);
+                })
+                return copy;
             });
         }
-    }
-    query() {
-
     }
 }
 // BUILD BETWEEN

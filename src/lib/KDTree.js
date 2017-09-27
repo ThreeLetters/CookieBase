@@ -46,12 +46,11 @@ class KDTree {
         this.dims = dims;
     }
     insert(obj) {
-        var len = this.dims.length;
+        var len = this.dims;
 
         var recurse = function (node) {
-
             if (node.left) {
-                recurse((obj[this.dims[node.dim]] > node.split) ? node.right : node.left);
+                recurse((obj[node.dim] > node.split) ? node.right : node.left);
             } else {
                 node.nodes.push(obj);
                 obj._TreeNode = node;
@@ -59,16 +58,16 @@ class KDTree {
 
                 if (node.nodes.length >= MAX_NODES && (node.nodes.length % 2 === 0)) {
                     node.nodes.sort(function (a, b) {
-                        return a[this.dims[node.dim]] - b[this.dims[node.dim]];
+                        return a[node.dim] - b[node.dim];
                     }.bind(this))
 
                     var len = node.nodes.length;
                     var half = len / 2;
-                    var median = node.nodes[half - 1][this.dims[node.dim]];
-                    var median2 = node.nodes[half][this.dims[node.dim]];
+                    var median = node.nodes[half - 1][node.dim];
+                    var median2 = node.nodes[half][node.dim];
                     if (typeof median === "number" && typeof median2 === "number") median = Math.floor((median + median2) / 2)
 
-                    if (node.nodes[len - 1][this.dims[node.dim]] === median) {
+                    if (node.nodes[len - 1][node.dim] === median) {
                         return;
                     }
 
@@ -120,7 +119,7 @@ class KDTree {
         recurse(this.root);
     }
     delete(obj) {
-        if (!obj._TreeNode) throw "Error: Obj does not belong in a node!";
+        if (!obj._TreeNode) return;
         var node = obj._TreeNode;
 
         var ind = node.nodes.indexOf(obj);
@@ -151,7 +150,7 @@ class KDTree {
     query(obj, call) {
         var recurse = function (node) {
             if (node.left) {
-                var val = obj[this.dims[node.dim]];
+                var val = obj[node.dim];
                 if (val === undefined) {
                     recurse(node.left);
                     recurse(node.right);
