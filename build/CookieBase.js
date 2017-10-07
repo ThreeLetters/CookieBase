@@ -591,7 +591,9 @@ class CookieBase {
                 var copy = {};
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
-                            return !(row[dt.indexes[key]] <= val[0] && row[dt.indexes[key]] > val[1]);
+                            if (row[dt.indexes[key]] <= val[0] || row[dt.indexes[key]] > val[1]) {
+                                return false;
+                            }
                         } else if (row[dt.indexes[key]] !== val) {
                             return false;
                         }
