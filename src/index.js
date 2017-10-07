@@ -296,7 +296,7 @@ class CookieBase {
             this.apply(dt, where);
             var out = [];
             dt.tree.query(where, (row) => {
-                var copy = {};
+
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
                             if (row[dt.indexes[key]] <= val[0] || row[dt.indexes[key]] > val[1]) {
@@ -305,9 +305,14 @@ class CookieBase {
                         } else if (row[dt.indexes[key]] !== val) {
                             return false;
                         }
-                        copy[key] = this.decast(row[dt.indexes[key]], dt.struct[i]);
                         return true;
                     })) {
+                    var copy = {};
+
+                    row.forEach((it, i) => {
+                        copy[dt.sindexes[i]] = this.decast(it, dt.struct[i])
+                    })
+
                     if (!func || func(copy)) out.push(copy);
                 }
             })
