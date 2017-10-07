@@ -4,7 +4,7 @@
  License: MIT (https://github.com/ThreeLetters/CookieBase/blob/master/LICENSE)
  Source: https://github.com/ThreeLetters/CookieBase
  Build: v0.1.0
- Built on: 27/09/2017
+ Built on: 07/10/2017
 */
 
 function every(obj, call) {
@@ -590,8 +590,8 @@ class CookieBase {
             dt.tree.query(where, (row) => {
                 var copy = {};
                 if (every(where, (val, key) => {
-                        if (typeof val === 'object' && row[dt.indexes[key]] <= val[0] && row[dt.indexes[key]] > val[1]) {
-                            return false;
+                        if (typeof val === 'object') {
+                            return !(row[dt.indexes[key]] <= val[0] && row[dt.indexes[key]] > val[1]);
                         } else if (row[dt.indexes[key]] !== val) {
                             return false;
                         }
