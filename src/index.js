@@ -254,8 +254,8 @@ class CookieBase {
         var str = 'cookiebase_' + table + '_cc_';
         var start = rowNum * dt.columnLen;
         dt.struct.forEach((type, i) => {
-            if (!rep[dt.indexes[i]]) return;
-            var res = this.cast(rep[dt.indexes[i]], type)
+            if (rep[dt.sindexes[i]] === undefined) return;
+            var res = this.cast(rep[dt.sindexes[i]], type)
             document.cookie = str + (start + i) + '=' + encodeURIComponent(res);
             row[i] = res;
         })
