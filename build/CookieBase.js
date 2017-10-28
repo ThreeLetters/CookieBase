@@ -589,7 +589,7 @@ class CookieBase {
     select(table, where, func) {
         var dt = this.data[table];
         if (where) {
-            this.apply(dt, where);
+            where = this.apply(dt, where);
             var out = [];
             dt.tree.query(where, (row) => {
 
