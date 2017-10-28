@@ -4,7 +4,7 @@
  License: MIT (https://github.com/ThreeLetters/CookieBase/blob/master/LICENSE)
  Source: https://github.com/ThreeLetters/CookieBase
  Build: v0.1.0
- Built on: 07/10/2017
+ Built on: 28/10/2017
 */
 
 function every(obj, call) {
@@ -455,12 +455,13 @@ class CookieBase {
             if (cond[i]) {
                 var type = dt.struct[dt.indexes[i]]
                 if (type === 'json' || type === 'rson') {
-                    cond[i] = this.cast(cond[i], type)
+                    cond[dt.indexes[i]] = cond[i] = this.cast(cond[i], type)
                 } else if (cond[i][0] && cond.length === 2) {
-                    cond[i][0] = this.cast(cond[i][0], type)
-                    cond[i][1] = this.cast(cond[i][1], type)
+                    cond[dt.indexes[i]] = [];
+                    cond[dt.indexes[i]][0] = cond[i][0] = this.cast(cond[i][0], type)
+                    cond[dt.indexes[i]][1] = cond[i][1] = this.cast(cond[i][1], type)
                 } else {
-                    cond[i] = this.cast(cond[i], type)
+                    cond[dt.indexes[i]] = cond[i] = this.cast(cond[i], type)
                 }
             }
         }
@@ -542,7 +543,7 @@ class CookieBase {
         var str = 'cookiebase_' + table + '_cc_';
         var start = rowNum * dt.columnLen;
         dt.struct.forEach((type, i) => {
-            if (!rep[dt.indexes[i]]) continue;
+            if (!rep[dt.indexes[i]]) return;
             var res = this.cast(rep[dt.indexes[i]], type)
             document.cookie = str + (start + i) + '=' + encodeURIComponent(res);
             row[i] = res;
@@ -554,7 +555,7 @@ class CookieBase {
         var dt = this.data[table]
         if (where) {
             this.apply(dt, where);
-            var arr = dt.tree.get();
+            var arr = dt.tree.get(where);
             arr.forEach((row) => {
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
