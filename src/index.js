@@ -160,16 +160,17 @@ class CookieBase {
 
     apply(dt, cond) {
         for (var i in dt.struct) {
-            if (cond[i]) {
-                var type = dt.struct[dt.indexes[i]]
+            var name = dt.sindexes[i];
+            if (cond[name]) {
+                var type = dt.struct[i]
                 if (type === 'json' || type === 'rson') {
-                    cond[dt.indexes[i]] = cond[i] = this.cast(cond[i], type)
-                } else if (cond[i][0] && cond.length === 2) {
-                    cond[dt.indexes[i]] = [];
-                    cond[dt.indexes[i]][0] = cond[i][0] = this.cast(cond[i][0], type)
-                    cond[dt.indexes[i]][1] = cond[i][1] = this.cast(cond[i][1], type)
+                    cond[name] = cond[i] = this.cast(cond[name], type)
+                } else if (cond[name][0] && cond[name].length === 2) {
+                    cond[i] = [];
+                    cond[name][0] = cond[i][0] = this.cast(cond[name][0], type)
+                    cond[name][1] = cond[i][1] = this.cast(cond[name][1], type)
                 } else {
-                    cond[dt.indexes[i]] = cond[i] = this.cast(cond[i], type)
+                    cond[name] = cond[i] = this.cast(cond[name], type)
                 }
             }
         }
