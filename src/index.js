@@ -159,21 +159,23 @@ class CookieBase {
     }
 
     apply(dt, cond) {
+        var out = {}
         for (var i in dt.struct) {
             var name = dt.sindexes[i];
             if (cond[name]) {
                 var type = dt.struct[i]
                 if (type === 'json' || type === 'rson') {
-                    cond[name] = cond[i] = this.cast(cond[name], type)
+                    out[i] = this.cast(cond[name], type)
                 } else if (cond[name][0] && cond[name].length === 2) {
-                    cond[i] = [];
-                    cond[name][0] = cond[i][0] = this.cast(cond[name][0], type)
-                    cond[name][1] = cond[i][1] = this.cast(cond[name][1], type)
+                    out[i] = [];
+                    out[i][0] = this.cast(cond[name][0], type)
+                    out[i][1] = this.cast(cond[name][1], type)
                 } else {
-                    cond[name] = cond[i] = this.cast(cond[name], type)
+                    out[i] = this.cast(cond[name], type)
                 }
             }
         }
+        return out;
     }
     _insert(table, data) {
         var dt = this.data[table];
@@ -220,14 +222,14 @@ class CookieBase {
     delete(table, where, func) {
         var dt = this.data[table];
         if (where) {
-            this.apply(dt, where);
+            where = this.apply(dt, where);
             var arr = dt.tree.get(where);
             arr.forEach((row) => {
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
-                            return row[dt.indexes[key]] > val[0] && row[dt.indexes[key]] <= val[1];
+                            return row[key] > val[0] && row[key] <= val[1];
                         } else {
-                            return row[dt.indexes[key]] === val;
+                            return row[key] === val;
                         }
                     })) {
                     if (!func || func(row)) this.deleteRow(table, row);
@@ -263,14 +265,14 @@ class CookieBase {
     update(table, data, where, func) {
         var dt = this.data[table]
         if (where) {
-            this.apply(dt, where);
+            where = this.apply(dt, where);
             var arr = dt.tree.get(where);
             arr.forEach((row) => {
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
-                            return row[dt.indexes[key]] > val[0] && row[dt.indexes[key]] <= val[1];
+                            return row[key] > val[0] && row[key] <= val[1];
                         } else {
-                            return row[dt.indexes[key]] === val;
+                            return row[key] === val;
                         }
                     })) {
                     if (func) {
@@ -301,10 +303,10 @@ class CookieBase {
 
                 if (every(where, (val, key) => {
                         if (typeof val === 'object') {
-                            if (row[dt.indexes[key]] <= val[0] || row[dt.indexes[key]] > val[1]) {
+                            if (row[key] <= val[0] || row[key] > val[1]) {
                                 return false;
                             }
-                        } else if (row[dt.indexes[key]] !== val) {
+                        } else if (row[key] !== val) {
                             return false;
                         }
                         return true;
