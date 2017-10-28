@@ -542,7 +542,7 @@ class CookieBase {
     }
     updateRow(table, row, rep) {
         var dt = this.data[table];
-        var rowNum = dt.data.index;
+        var rowNum = row.index;
         var str = 'cookiebase_' + table + '_cc_';
         var start = rowNum * dt.columnLen;
         dt.struct.forEach((type, i) => {
