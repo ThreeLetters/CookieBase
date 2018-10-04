@@ -215,7 +215,7 @@ class CookieBase {
         dt.struct.forEach((type, i) => {
             document.cookie = str + (start + i) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;' + this.append2;
         });
-        dt.data[rowNum] = last;
+        if (rowNum !== lastIndex) dt.data[rowNum] = last;
         dt.data.pop();
         dt.tree.delete(row);
     }

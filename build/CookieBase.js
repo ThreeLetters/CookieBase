@@ -4,7 +4,7 @@
  License: MIT (https://github.com/ThreeLetters/CookieBase/blob/master/LICENSE)
  Source: https://github.com/ThreeLetters/CookieBase
  Build: v0.1.0
- Built on: 28/10/2017
+ Built on: 04/10/2018
 */
 
 function every(obj, call) {
@@ -507,7 +507,7 @@ class CookieBase {
         dt.struct.forEach((type, i) => {
             document.cookie = str + (start + i) + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;' + this.append2;
         });
-        dt.data[rowNum] = last;
+        if (rowNum !== lastIndex) dt.data[rowNum] = last;
         dt.data.pop();
         dt.tree.delete(row);
     }
